@@ -1,24 +1,20 @@
-# 🎭 Memes, GIFs & Image Templates Folder
+# 🎭 Active Hand Gesture & Meme Mapping
 
-Drop your meme files (images, GIFs, or webp) right here in this folder!
+The system is configured to map hand poses and movements directly to your meme images:
 
-The system will automatically detect and open them when you make the corresponding hand gesture.
-
----
-
-### Default File Naming Convention:
-| Hand Gesture | Supported File Names | Trigger Condition |
-| :--- | :--- | :--- |
-| **🖐️ Open Hand** | `open.png`, `open.jpg`, `open.gif`, `open.webp` | Flat palm / Open hand |
-| **✊ Closed Fist** | `close.png`, `close.jpg`, `close.gif`, `close.webp` | Closed fist |
-| **👉 Pointing** | `pointer.png`, `pointer.jpg`, `pointer.gif`, `pointer.webp` | Index finger pointing |
-| **🔄 Clockwise Circle** | `clockwise.png`, `clockwise.gif`, `clockwise.webp` | Drawing a clockwise circle with finger |
-| **🔃 Counter-Clockwise** | `counter_clockwise.png`, `counter_clockwise.gif`, `counter_clockwise.webp` | Drawing a counter-clockwise circle |
-| **↔️ Move / Swipe** | `move.png`, `move.jpg`, `move.gif`, `move.webp` | Waving/swiping index finger |
+| Meme File | Target Gesture | Description | Visual Preview |
+| :--- | :--- | :--- | :--- |
+| **`1.jpg`** | 🤙 **Thumb + Pinky** | Shaka / "Call me" gesture (Thumb & Pinky extended, others curled) | Cat Shaka |
+| **`2.jpg`** | ☝️ **Index Pointer** | Pointing index finger straight up | Monkey Pointing |
+| **`3.jpg`** | 🤔 **Index Bend** | Index finger hooked / bent at PIP (thinking pose) | Monkey Thinking |
+| **`4.jpg`** | 👍 **Thumb Up** | Thumbs up (only thumb extended, others curled in fist) | Monkey Thumbs Up |
+| **`5.jpg`** | ✊ **Closed Fist (1)** | Closed fist | Laughing Baby |
+| **`6.jpg`** | 🔄 **Clockwise / Anticlockwise** | Drawing circle with pointer (or alternating Closed Fist) | LeBron Knuckle Bite |
+| **`7.jpg`** | 🖐️ **Open Hand** | All 5 fingers extended flat out | J. Cole Open Hand |
 
 ---
 
-### Notes:
-- Supported formats: `.png`, `.jpg`, `.jpeg`, `.gif`, `.webp`.
-- Case insensitive (e.g. `open.png` or `Open.PNG` will both work).
-- Cooldown is set to 2.5 seconds by default to prevent spamming.
+### Key Features:
+- **Auto Image Launch**: Opens the image locally on Windows using default image viewer.
+- **On-Screen PiP Overlay**: Displays a thumbnail preview and caption in the top-right corner of the OpenCV window for 3 seconds.
+- **Smart Debounce**: 2.0-second cooldown prevents spamming multiple windows.

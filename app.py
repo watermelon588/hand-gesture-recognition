@@ -177,7 +177,7 @@ def main():
                 # Meme Trigger #################################################
                 if meme_trigger:
                     meme_trigger.trigger(
-                        keypoint_classifier_labels[hand_sign_id],
+                        landmark_list,
                         point_history_classifier_labels[most_common_fg_id[0][0]],
                     )
         else:
@@ -185,6 +185,10 @@ def main():
 
         debug_image = draw_point_history(debug_image, point_history)
         debug_image = draw_info(debug_image, fps, mode, number)
+
+        # Meme PiP Overlay #####################################################
+        if meme_trigger:
+            debug_image = meme_trigger.draw_overlay(debug_image)
 
         # 画面反映 #############################################################
         cv.imshow('Hand Gesture Recognition', debug_image)
