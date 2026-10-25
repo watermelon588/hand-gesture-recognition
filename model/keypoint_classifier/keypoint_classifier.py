@@ -1,7 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-import numpy as np
-import tensorflow as tf
+try:
+    from ai_edge_litert.interpreter import Interpreter
+except ImportError:
+    try:
+        from tflite_runtime.interpreter import Interpreter
+    except ImportError:
+        import tensorflow as tf
+        Interpreter = tf.lite.Interpreter
 
 
 class KeyPointClassifier(object):
@@ -10,8 +16,8 @@ class KeyPointClassifier(object):
         model_path='model/keypoint_classifier/keypoint_classifier.tflite',
         num_threads=1,
     ):
-        self.interpreter = tf.lite.Interpreter(model_path=model_path,
-                                               num_threads=num_threads)
+        self.interpreter = Interpreter(model_path=model_path,
+                                       num_threads=num_threads)
 
         self.interpreter.allocate_tensors()
         self.input_details = self.interpreter.get_input_details()
