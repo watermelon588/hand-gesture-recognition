@@ -14,6 +14,7 @@ import mediapipe as mp
 from utils import CvFpsCalc
 from model import KeyPointClassifier
 from model import PointHistoryClassifier
+from meme_action import MemeTrigger
 
 
 def get_args():
@@ -32,6 +33,7 @@ def get_args():
                         help='min_tracking_confidence',
                         type=int,
                         default=0.5)
+    parser.add_argument("--disable_memes", action="store_true", help="Disable automatic meme opening on gestures")
 
     args = parser.parse_args()
 
@@ -69,6 +71,9 @@ def main():
     keypoint_classifier = KeyPointClassifier()
 
     point_history_classifier = PointHistoryClassifier()
+
+    # Meme Trigger #############################################################
+    meme_trigger = None if args.disable_memes else MemeTrigger(memes_dir='memes', cooldown=2.5)
 
     # ラベル読み込み ###########################################################
     with open('model/keypoint_classifier/keypoint_classifier_label.csv',
@@ -168,6 +173,13 @@ def main():
                     keypoint_classifier_labels[hand_sign_id],
                     point_history_classifier_labels[most_common_fg_id[0][0]],
                 )
+
+                # Meme Trigger #################################################
+                if meme_trigger:
+                    meme_trigger.trigger(
+                        keypoint_classifier_labels[hand_sign_id],
+                        point_history_classifier_labels[most_common_fg_id[0][0]],
+                    )
         else:
             point_history.append([0, 0])
 
