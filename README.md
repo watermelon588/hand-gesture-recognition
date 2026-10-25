@@ -95,6 +95,29 @@ python app.py --device 0 --width 1280 --height 720
 
 ---
 
+## 🎭 Interactive Meme Gesture Controller
+
+Control and showcase memes live on camera using hand signs! Mimic the pose from each meme reference, and the system locks in the matching meme onto an in-video card overlay with a glowing HUD and hold progress indicator.
+
+| ID | Reference Meme | Target Gesture | Handedness | How to Perform |
+| :---: | :---: | :--- | :---: | :--- |
+| **1** | ![Cat Shaka](memes/1.jpg) | 🤙 **Cat Shaka** | **Left or Right** | Extend **Thumb & Pinky** outward, fold middle 3 fingers ("Call me" / Shaka). |
+| **2** | ![Monkey Pointing](memes/2.jpg) | ☝️ **Monkey Pointing** | **Left or Right** | Point **Index finger straight UP**, fold other fingers into a fist. |
+| **3** | ![Monkey Thinking](memes/3.jpg) | 🤔 **Monkey Thinking** | **Left or Right** | Hook/bend your **Index finger** at chin level in a thinking pose. |
+| **4** | ![Monkey Thumbs Up](memes/4.jpg) | 👍 **Monkey Thumbs Up** | **Left or Right** | Point **Thumb straight UP**, clench other 4 fingers in a fist. |
+| **5** | ![Baby Fist](memes/5.jpg) | ✊ **Laughing Baby Fist** | **Left Hand** *(or held)* | Clench a **Closed Fist with your Left Hand** (or hold either fist). |
+| **6** | ![LeBron Knuckle](memes/6.jpg) | 🔄 **LeBron Knuckle / Spin** | **Right Hand / Motion** | Clench a **Closed Fist with your Right Hand** OR draw a **circle in the air** with your pointer finger. |
+| **7** | ![J. Cole Open](memes/7.jpg) | 🖐️ **J. Cole Open Hand** | **Left or Right** | Open all **5 fingers flat out** facing the camera ("Stop / Chill" pose). |
+| **8** | ![Who Me](memes/8.jpg) | 👉👤 **Who, Me?** | **Left or Right** | Point **Index finger horizontally inward at your chest**, thumb extended out. |
+
+### Stability & Experience Features
+* **Zero External Windows**: Memes render directly in the top-right corner of the video window inside a letterboxed frosted-glass card.
+* **Hold-to-Confirm Smoothing**: Hold any gesture for ~0.3s (8 frames) to activate. Transient hand movements or passing poses never trigger random memes.
+* **Live Progress Bar**: Displays `Holding: <Gesture> (XX%)` on the card before locking in.
+* **Full Left & Right Hand Support**: Powered by hand-agnostic joint kinematic geometry and KeyPointClassifier neural network predictions.
+
+---
+
 ## Docker Execution
 
 ```bash

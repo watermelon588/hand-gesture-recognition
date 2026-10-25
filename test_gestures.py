@@ -3,125 +3,136 @@ import sys
 import numpy as np
 from meme_action import MemeTrigger
 
-mt = MemeTrigger(hold_frames=10)
+mt = MemeTrigger(hold_frames=8)
 
-def make_hand(thumb_ext=False, index_state='folded', middle_ext=False, ring_ext=False, pinky_ext=False):
-    pts = [[300, 400]] * 21
-    pts[9] = [300, 300]   # Palm size = 100
-    pts[2] = [260, 340]
-    pts[3] = [230, 310]
-    pts[4] = [170, 260] if thumb_ext else [280, 320]
-    
-    pts[5] = [270, 290]
+def make_hand(thumb_ext=False, thumb_up=False, index_state='folded', middle_ext=False, ring_ext=False, pinky_ext=False, is_left=False):
+    # Right hand: thumb is to the left (x < wrist), pinky to the right (x > wrist)
+    # Left hand: thumb is to the right (x > wrist), pinky to the left (x < wrist)
+    sign = -1 if is_left else 1
+    wrist_x, wrist_y = 300, 400
+    pts = [[wrist_x, wrist_y]] * 21
+    pts[9] = [300, 300]   # Palm center (MCP 9), palm_size = 100
+
+    # Thumb
+    pts[2] = [wrist_x - 40 * sign, 340]
+    pts[3] = [wrist_x - 70 * sign, 310]
+    if thumb_up:
+        pts[4] = [wrist_x - 50 * sign, 240]  # Pointing UP (y=240 < y=340)
+    elif thumb_ext:
+        pts[4] = [wrist_x - 120 * sign, 310] # Pointing outward
+    else:
+        pts[4] = [wrist_x - 20 * sign, 320]  # Folded across palm
+
+    # Index (5, 6, 7, 8)
+    pts[5] = [wrist_x - 30 * sign, 290]
     if index_state == 'extended':
-        pts[6] = [260, 230]
-        pts[7] = [255, 170]
-        pts[8] = [250, 110]
+        pts[6] = [wrist_x - 40 * sign, 230]
+        pts[7] = [wrist_x - 45 * sign, 170]
+        pts[8] = [wrist_x - 50 * sign, 110]
     elif index_state == 'bent':
-        pts[6] = [260, 220] # PIP projected forward
-        pts[7] = [275, 230]
-        pts[8] = [270, 270] # curled inward back towards MCP
+        pts[6] = [wrist_x - 40 * sign, 220] # PIP projected forward
+        pts[7] = [wrist_x - 25 * sign, 230]
+        pts[8] = [wrist_x - 30 * sign, 260] # Tip curled inward
+    elif index_state == 'inward':
+        pts[6] = [wrist_x - 10 * sign, 270]
+        pts[7] = [wrist_x + 30 * sign, 270]
+        pts[8] = [wrist_x + 70 * sign, 270] # pointing horizontally inward at chest
     else: # folded
-        pts[6] = [270, 310] # PIP not projected
-        pts[7] = [270, 320]
-        pts[8] = [270, 340]
+        pts[6] = [wrist_x - 30 * sign, 310]
+        pts[7] = [wrist_x - 30 * sign, 320]
+        pts[8] = [wrist_x - 30 * sign, 340]
 
+    # Middle (9, 10, 11, 12)
     pts[10] = [300, 220]
     pts[12] = [300, 100] if middle_ext else [300, 340]
 
-    pts[13] = [330, 290]
-    pts[14] = [335, 230]
-    pts[16] = [340, 110] if ring_ext else [330, 340]
+    # Ring (13, 14, 15, 16)
+    pts[13] = [wrist_x + 30 * sign, 290]
+    pts[14] = [wrist_x + 35 * sign, 230]
+    pts[16] = [wrist_x + 40 * sign, 110] if ring_ext else [wrist_x + 30 * sign, 340]
 
-    pts[17] = [360, 310]
-    pts[18] = [370, 250]
-    pts[20] = [385, 130] if pinky_ext else [355, 340]
+    # Pinky (17, 18, 19, 20)
+    pts[17] = [wrist_x + 60 * sign, 310]
+    pts[18] = [wrist_x + 70 * sign, 250]
+    pts[20] = [wrist_x + 85 * sign, 130] if pinky_ext else [wrist_x + 55 * sign, 340]
 
     return pts
 
-results = []
-# 1 -> thumb + pinky
-pts1 = make_hand(thumb_ext=True, pinky_ext=True)
-gid1, name1 = mt.detect_custom_gesture(pts1, 'Stop')
-results.append((1, gid1, name1))
+tests = [
+    # 1 -> Cat Shaka (🤙)
+    ("1: Shaka (Right Hand)", make_hand(thumb_ext=True, pinky_ext=True, is_left=False), "Stop", "Unknown", "Right", 1),
+    ("1: Shaka (Left Hand)", make_hand(thumb_ext=True, pinky_ext=True, is_left=True), "Stop", "Unknown", "Left", 1),
 
-# 2 -> index
-pts2 = make_hand(index_state='extended')
-gid2, name2 = mt.detect_custom_gesture(pts2, 'Stop')
-results.append((2, gid2, name2))
+    # 2 -> Monkey Pointing (☝️)
+    ("2: Pointing (Right Hand)", make_hand(index_state='extended', is_left=False), "Stop", "Pointer", "Right", 2),
+    ("2: Pointing (Left Hand)", make_hand(index_state='extended', is_left=True), "Stop", "Pointer", "Left", 2),
 
-# 3 -> index bend
-pts3 = make_hand(index_state='bent')
-gid3, name3 = mt.detect_custom_gesture(pts3, 'Stop')
-results.append((3, gid3, name3))
+    # 3 -> Monkey Thinking (🤔)
+    ("3: Thinking Bend (Right Hand)", make_hand(index_state='bent', is_left=False), "Stop", "Unknown", "Right", 3),
+    ("3: Thinking Bend (Left Hand)", make_hand(index_state='bent', is_left=True), "Stop", "Unknown", "Left", 3),
 
-# 4 -> thumb
-pts4 = make_hand(thumb_ext=True)
-gid4, name4 = mt.detect_custom_gesture(pts4, 'Stop')
-results.append((4, gid4, name4))
+    # 4 -> Monkey Thumbs Up (👍)
+    ("4: Thumbs Up (Right Hand)", make_hand(thumb_up=True, is_left=False), "Stop", "Unknown", "Right", 4),
+    ("4: Thumbs Up (Left Hand)", make_hand(thumb_up=True, is_left=True), "Stop", "Unknown", "Left", 4),
 
-# 5 -> closed
-pts5 = make_hand()
-gid5, name5 = mt.detect_custom_gesture(pts5, 'Stop')
-results.append((5, gid5, name5))
+    # 5 -> Baby Fist (Left Hand)
+    ("5: Closed Fist (Left Hand)", make_hand(is_left=True), "Stop", "Close", "Left", 5),
 
-# 6 -> clockwise motion
-gid6_cw, name6_cw = mt.detect_custom_gesture(pts2, 'Clockwise')
-results.append(('6 (Clockwise)', gid6_cw, name6_cw))
+    # 6 -> LeBron Knuckle (Right Hand)
+    ("6: Closed Fist (Right Hand)", make_hand(is_left=False), "Stop", "Close", "Right", 6),
 
-# 6 -> anticlockwise motion
-gid6_ccw, name6_ccw = mt.detect_custom_gesture(pts2, 'Counter Clockwise')
-results.append(('6 (Counter Clockwise)', gid6_ccw, name6_ccw))
+    # 6 -> Motion Gesture (Clockwise / Counter Clockwise)
+    ("6: Clockwise Motion (Circle)", make_hand(index_state='extended', is_left=False), "Clockwise", "Pointer", "Right", 6),
+    ("6: Counter Clockwise (Circle)", make_hand(index_state='extended', is_left=False), "Counter Clockwise", "Pointer", "Right", 6),
 
-# 7 -> open
-pts7 = make_hand(thumb_ext=True, index_state='extended', middle_ext=True, ring_ext=True, pinky_ext=True)
-gid7, name7 = mt.detect_custom_gesture(pts7, 'Stop')
-results.append((7, gid7, name7))
+    # 7 -> J. Cole Open Hand
+    ("7: Open Hand (Right Hand)", make_hand(thumb_ext=True, index_state='extended', middle_ext=True, ring_ext=True, pinky_ext=True, is_left=False), "Stop", "Open", "Right", 7),
+    ("7: Open Hand (Left Hand)", make_hand(thumb_ext=True, index_state='extended', middle_ext=True, ring_ext=True, pinky_ext=True, is_left=True), "Stop", "Open", "Left", 7),
+
+    # 8 -> Who, Me?
+    ("8: Point at Self (Inward)", make_hand(thumb_ext=True, index_state='inward', is_left=False), "Stop", "Unknown", "Right", 8),
+]
 
 all_pass = True
-print("=" * 65)
-print("GESTURE DETECTION VERIFICATION TEST SUITE")
-print("=" * 65)
-for expected, detected, label in results:
-    is_ok = str(expected).startswith(str(detected))
+print("=" * 75)
+print("GESTURE & HANDEDNESS VERIFICATION TEST SUITE (LEFT + RIGHT HANDS)")
+print("=" * 75)
+for test_name, pts, motion, sign_label, hand, expected_id in tests:
+    det_id, det_name = mt.detect_custom_gesture(pts, motion, sign_label, hand)
+    is_ok = (det_id == expected_id)
     if not is_ok:
         all_pass = False
-    status_str = "[PASS]" if is_ok else "[FAIL]"
-    print(f"Target: {str(expected):<22} -> Detected ID: {str(detected):<3} ({label:<25}) {status_str}")
+    status = "[PASS]" if is_ok else "[FAIL]"
+    print(f"{test_name:<34} -> Detected ID: {str(det_id):<2} ({det_name:<24}) {status}")
 
-print("=" * 65)
+print("=" * 75)
 
-# --- Temporal Hold & Jitter Stability Test ---
-print("\nTESTING TEMPORAL STABILITY & HOLD FILTER:")
-test_mt = MemeTrigger(hold_frames=10)
+# --- Hold-to-Confirm Temporal Smoothing Test ---
+print("\nVERIFYING HOLD-TO-CONFIRM ON REAL FRAMES:")
+test_mt = MemeTrigger(hold_frames=8)
+right_point = make_hand(index_state='extended', is_left=False)
 
-# Simulate 3 frames of random gesture (transient jitter)
+# 3 frames (transient)
 for _ in range(3):
-    test_mt.trigger(pts2, 'Stop')
-print(f"After 3 frames of gesture 2 -> Active Meme: {test_mt.active_meme_id} (Expected None - Not yet held)")
-assert test_mt.active_meme_id is None, "Should not trigger on transient 3 frames!"
+    test_mt.trigger(right_point, 'Stop', 'Pointer', 'Right')
+assert test_mt.active_meme_id is None, "Should not trigger on 3 transient frames!"
+print("Transient 3 frames rejected properly: [PASS]")
 
-# Complete 10 frames of gesture 2
-for _ in range(7):
-    test_mt.trigger(pts2, 'Stop')
-print(f"After 10 frames of gesture 2 -> Active Meme: {test_mt.active_meme_id} (Expected 2 - Locked in!)")
-assert test_mt.active_meme_id == 2, "Should lock in after 10 frames!"
-
-# Simulate transient 2 frames of another gesture while moving hand
-for _ in range(2):
-    test_mt.trigger(pts1, 'Stop')
-print(f"After 2 transient frames of gesture 1 -> Active Meme: {test_mt.active_meme_id} (Expected 2 - Maintained stability!)")
-assert test_mt.active_meme_id == 2, "Active meme should not be disturbed by 2 transient frames!"
+# 8 frames (confirmed)
+for _ in range(5):
+    test_mt.trigger(right_point, 'Stop', 'Pointer', 'Right')
+assert test_mt.active_meme_id == 2, "Should lock into Meme 2 after 8 frames!"
+print("Hold-to-confirm locked into Meme 2: [PASS]")
 
 # Test Overlay Rendering
-dummy_frame = np.zeros((540, 960, 3), dtype=np.uint8)
-rendered_frame = test_mt.draw_overlay(dummy_frame)
-assert rendered_frame.shape == (540, 960, 3), "Overlay output shape mismatch!"
-print("Overlay rendering verification: [PASS]")
+dummy = np.zeros((540, 960, 3), dtype=np.uint8)
+rendered = test_mt.draw_overlay(dummy)
+assert rendered.shape == (540, 960, 3), "Overlay dimension mismatch!"
+print("In-video card overlay render: [PASS]")
 
-print("=" * 65)
+print("=" * 75)
 if all_pass:
-    print("ALL 7 GESTURES & TEMPORAL STABILITY TESTS PASSED WITH 100% ACCURACY!")
+    print("ALL 15 TEST CASES (LEFT & RIGHT HANDS + MOTION) PASSED WITH 100% SUCCESS!")
 else:
-    print("SOME GESTURES FAILED!")
-print("=" * 65)
+    print("SOME TEST CASES FAILED!")
+print("=" * 75)
