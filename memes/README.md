@@ -1,20 +1,21 @@
-# 🎭 Active Hand Gesture & Meme Mapping
+# 🎭 In-Video Hand Gesture & Meme Controller
 
-The system is configured to map hand poses and movements directly to your meme images:
+The system maps hand poses and circular finger movements directly to your meme images displayed **strictly inside the video window**:
 
 | Meme File | Target Gesture | Description | Visual Preview |
 | :--- | :--- | :--- | :--- |
-| **`1.jpg`** | 🤙 **Thumb + Pinky** | Shaka / "Call me" gesture (Thumb & Pinky extended, others curled) | Cat Shaka |
+| **`1.jpg`** | 🤙 **Thumb + Pinky** | Shaka gesture (Thumb & Pinky extended, middle three folded) | Cat Shaka |
 | **`2.jpg`** | ☝️ **Index Pointer** | Pointing index finger straight up | Monkey Pointing |
 | **`3.jpg`** | 🤔 **Index Bend** | Index finger hooked / bent at PIP (thinking pose) | Monkey Thinking |
-| **`4.jpg`** | 👍 **Thumb Up** | Thumbs up (only thumb extended, others curled in fist) | Monkey Thumbs Up |
-| **`5.jpg`** | ✊ **Closed Fist (1)** | Closed fist | Laughing Baby |
-| **`6.jpg`** | 🔄 **Clockwise / Anticlockwise** | Drawing circle with pointer (or alternating Closed Fist) | LeBron Knuckle Bite |
+| **`4.jpg`** | 👍 **Thumb Up** | Thumbs up (only thumb extended, four fingers curled in fist) | Monkey Thumbs Up |
+| **`5.jpg`** | ✊ **Closed Fist** | Compact closed fist (all fingers folded) | Laughing Baby |
+| **`6.jpg`** | 🔄 **Clockwise / Anticlockwise** | Drawing a circle in the air with index finger | LeBron Knuckle Bite |
 | **`7.jpg`** | 🖐️ **Open Hand** | All 5 fingers extended flat out | J. Cole Open Hand |
 
 ---
 
-### Key Features:
-- **Auto Image Launch**: Opens the image locally on Windows using default image viewer.
-- **On-Screen PiP Overlay**: Displays a thumbnail preview and caption in the top-right corner of the OpenCV window for 3 seconds.
-- **Smart Debounce**: 2.0-second cooldown prevents spamming multiple windows.
+### Key Improvements & Stability System:
+- **100% In-Video Display**: No external OS image viewer windows. Memes appear directly inside a styled, frosted-glass card in the top-right corner of the camera feed.
+- **Hold-to-Confirm Temporal Smoothing**: You must deliberately hold a gesture for ~0.35s (10 consecutive frames) to lock it in. Random hand movements or transitioning between poses will **never** trigger accidental memes.
+- **Real-Time Hold Progress Meter**: A dynamic cyan progress bar displays `Holding: <Gesture> (XX%)` on the card while holding.
+- **Active Meme Persistence**: The confirmed meme stays visible on screen with an active status badge until you intentionally switch to another gesture.

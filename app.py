@@ -73,7 +73,7 @@ def main():
     point_history_classifier = PointHistoryClassifier()
 
     # Meme Trigger #############################################################
-    meme_trigger = None if args.disable_memes else MemeTrigger(memes_dir='memes', cooldown=2.5)
+    meme_trigger = None if args.disable_memes else MemeTrigger(memes_dir='memes', hold_frames=10)
 
     # ラベル読み込み ###########################################################
     with open('model/keypoint_classifier/keypoint_classifier_label.csv',
@@ -182,6 +182,8 @@ def main():
                     )
         else:
             point_history.append([0, 0])
+            if meme_trigger:
+                meme_trigger.update_no_hand()
 
         debug_image = draw_point_history(debug_image, point_history)
         debug_image = draw_info(debug_image, fps, mode, number)
