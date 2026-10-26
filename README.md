@@ -102,19 +102,17 @@ Control and showcase memes live on camera using hand signs! Mimic the pose from 
 | ID | Reference Meme | Target Gesture | Handedness | How to Perform |
 | :---: | :---: | :--- | :---: | :--- |
 | **1** | ![Cat Shaka](memes/1.jpg) | 🤙 **Cat Shaka** | **Left or Right** | Extend **Thumb & Pinky** outward, fold middle 3 fingers ("Call me" / Shaka). |
-| **2** | ![Monkey Pointing](memes/2.jpg) | ☝️ **Monkey Pointing** | **Left or Right** | Point **Index finger straight UP**, fold other fingers into a fist. |
-| **3** | ![Monkey Thinking](memes/3.jpg) | 🤔 **Monkey Thinking** | **Left or Right** | Hook/bend your **Index finger** at chin level in a thinking pose. |
+| **2** | ![Monkey Pointing](memes/2.jpg) | ☝️ **1 Finger: Monkey Pointing** | **Left or Right** | Point **Index finger straight UP** (1 finger count), fold other fingers into a fist. |
 | **4** | ![Monkey Thumbs Up](memes/4.jpg) | 👍 **Monkey Thumbs Up** | **Left or Right** | Point **Thumb straight UP**, clench other 4 fingers in a fist. |
-| **5** | ![Baby Fist](memes/5.jpg) | ✊ **Laughing Baby Fist** | **Left Hand** *(or held)* | Clench a **Closed Fist with your Left Hand** (or hold either fist). |
-| **6** | ![LeBron Knuckle](memes/6.jpg) | 🔄 **LeBron Knuckle / Spin** | **Right Hand / Motion** | Clench a **Closed Fist with your Right Hand** OR draw a **circle in the air** with your pointer finger. |
-| **7** | ![J. Cole Open](memes/7.jpg) | 🖐️ **J. Cole Open Hand** | **Left or Right** | Open all **5 fingers flat out** facing the camera ("Stop / Chill" pose). |
-| **8** | ![Who Me](memes/8.jpg) | 👉👤 **Who, Me?** | **Left or Right** | Point **Index finger horizontally inward at your chest**, thumb extended out. |
+| **5** | ![Cat 4-Finger Hold](memes/5.png) | 🐾 **4 Fingers: Cat 4-Finger Hold** | **Left or Right** | Raise **Index, Middle, Ring & Pinky UP** (4 finger count), thumb tucked/folded across palm. |
+| **7** | ![J. Cole Open](memes/7.jpg) | 🖐️ **5 Fingers: J. Cole Open Hand** | **Left or Right** | Open all **5 fingers flat out** facing the camera (5 finger count / "Stop / Chill" pose). |
+| **8** | ![Cool Cat Peace](memes/8.png) | ✌️ **2 Fingers: Cool Cat Peace** | **Left or Right** | Extend **Index & Middle fingers in a Peace/V sign** (2 finger count), fold ring and pinky. |
 
 ### Stability & Experience Features
 * **Zero External Windows**: Memes render directly in the top-right corner of the video window inside a letterboxed frosted-glass card.
 * **Hold-to-Confirm Smoothing**: Hold any gesture for ~0.3s (8 frames) to activate. Transient hand movements or passing poses never trigger random memes.
 * **Live Progress Bar**: Displays `Holding: <Gesture> (XX%)` on the card before locking in.
-* **Full Left & Right Hand Support**: Powered by hand-agnostic joint kinematic geometry and KeyPointClassifier neural network predictions.
+* **Full Left & Right Hand Support**: Powered by hand-agnostic joint kinematic geometry and finger count angle tracking.
 
 ---
 

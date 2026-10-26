@@ -63,34 +63,32 @@ tests = [
     ("1: Shaka (Right Hand)", make_hand(thumb_ext=True, pinky_ext=True, is_left=False), "Stop", "Unknown", "Right", 1),
     ("1: Shaka (Left Hand)", make_hand(thumb_ext=True, pinky_ext=True, is_left=True), "Stop", "Unknown", "Left", 1),
 
-    # 2 -> Monkey Pointing (☝️)
-    ("2: Pointing (Right Hand)", make_hand(index_state='extended', is_left=False), "Stop", "Pointer", "Right", 2),
-    ("2: Pointing (Left Hand)", make_hand(index_state='extended', is_left=True), "Stop", "Pointer", "Left", 2),
-
-    # 3 -> Monkey Thinking (🤔)
-    ("3: Thinking Bend (Right Hand)", make_hand(index_state='bent', is_left=False), "Stop", "Unknown", "Right", 3),
-    ("3: Thinking Bend (Left Hand)", make_hand(index_state='bent', is_left=True), "Stop", "Unknown", "Left", 3),
+    # 2 -> 1 Finger: Monkey Pointing (☝️)
+    ("2: 1 Finger Point (Right Hand)", make_hand(index_state='extended', is_left=False), "Stop", "Pointer", "Right", 2),
+    ("2: 1 Finger Point (Left Hand)", make_hand(index_state='extended', is_left=True), "Stop", "Pointer", "Left", 2),
 
     # 4 -> Monkey Thumbs Up (👍)
     ("4: Thumbs Up (Right Hand)", make_hand(thumb_up=True, is_left=False), "Stop", "Unknown", "Right", 4),
     ("4: Thumbs Up (Left Hand)", make_hand(thumb_up=True, is_left=True), "Stop", "Unknown", "Left", 4),
 
-    # 5 -> Baby Fist (Left Hand)
-    ("5: Closed Fist (Left Hand)", make_hand(is_left=True), "Stop", "Close", "Left", 5),
+    # 5 -> 4 Fingers: Cat 4-Finger Hold (🐾)
+    ("5: 4 Fingers (Right Hand)", make_hand(thumb_ext=False, index_state='extended', middle_ext=True, ring_ext=True, pinky_ext=True, is_left=False), "Stop", "Unknown", "Right", 5),
+    ("5: 4 Fingers (Left Hand)", make_hand(thumb_ext=False, index_state='extended', middle_ext=True, ring_ext=True, pinky_ext=True, is_left=True), "Stop", "Unknown", "Left", 5),
 
-    # 6 -> LeBron Knuckle (Right Hand)
-    ("6: Closed Fist (Right Hand)", make_hand(is_left=False), "Stop", "Close", "Right", 6),
+    # 7 -> 5 Fingers: J. Cole Open Hand (🖐️)
+    ("7: 5 Fingers / Open (Right Hand)", make_hand(thumb_ext=True, index_state='extended', middle_ext=True, ring_ext=True, pinky_ext=True, is_left=False), "Stop", "Open", "Right", 7),
+    ("7: 5 Fingers / Open (Left Hand)", make_hand(thumb_ext=True, index_state='extended', middle_ext=True, ring_ext=True, pinky_ext=True, is_left=True), "Stop", "Open", "Left", 7),
 
-    # 6 -> Motion Gesture (Clockwise / Counter Clockwise)
-    ("6: Clockwise Motion (Circle)", make_hand(index_state='extended', is_left=False), "Clockwise", "Pointer", "Right", 6),
-    ("6: Counter Clockwise (Circle)", make_hand(index_state='extended', is_left=False), "Counter Clockwise", "Pointer", "Right", 6),
+    # 8 -> 2 Fingers: Cool Cat Peace (✌️)
+    ("8: 2 Fingers Peace (Right Hand)", make_hand(thumb_ext=False, index_state='extended', middle_ext=True, ring_ext=False, pinky_ext=False, is_left=False), "Stop", "Unknown", "Right", 8),
+    ("8: 2 Fingers Peace (Left Hand)", make_hand(thumb_ext=False, index_state='extended', middle_ext=True, ring_ext=False, pinky_ext=False, is_left=True), "Stop", "Unknown", "Left", 8),
 
-    # 7 -> J. Cole Open Hand
-    ("7: Open Hand (Right Hand)", make_hand(thumb_ext=True, index_state='extended', middle_ext=True, ring_ext=True, pinky_ext=True, is_left=False), "Stop", "Open", "Right", 7),
-    ("7: Open Hand (Left Hand)", make_hand(thumb_ext=True, index_state='extended', middle_ext=True, ring_ext=True, pinky_ext=True, is_left=True), "Stop", "Open", "Left", 7),
-
-    # 8 -> Who, Me?
-    ("8: Point at Self (Inward)", make_hand(thumb_ext=True, index_state='inward', is_left=False), "Stop", "Unknown", "Right", 8),
+    # Removed Gestures: Should NOT trigger any meme
+    ("Removed: Hooked Index (Old 3)", make_hand(index_state='bent', is_left=False), "Stop", "Unknown", "Right", None),
+    ("Removed: Closed Fist Left (Old 5)", make_hand(is_left=True), "Stop", "Close", "Left", None),
+    ("Removed: Closed Fist Right (Old 6)", make_hand(is_left=False), "Stop", "Close", "Right", None),
+    ("Removed: Circle Motion (Old 6)", make_hand(index_state='extended', is_left=False), "Clockwise", "Pointer", "Right", 2), # Now just triggers 1-finger point!
+    ("Removed: Point at Chest (Old 8)", make_hand(thumb_ext=True, index_state='inward', is_left=False), "Stop", "Unknown", "Right", None),
 ]
 
 all_pass = True
@@ -132,7 +130,7 @@ print("In-video card overlay render: [PASS]")
 
 print("=" * 75)
 if all_pass:
-    print("ALL 15 TEST CASES (LEFT & RIGHT HANDS + MOTION) PASSED WITH 100% SUCCESS!")
+    print(f"ALL {len(tests)} TEST CASES (LEFT & RIGHT HANDS + MOTION) PASSED WITH 100% SUCCESS!")
 else:
     print("SOME TEST CASES FAILED!")
 print("=" * 75)

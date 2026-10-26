@@ -269,13 +269,11 @@ An interactive gesture controller module (`meme_action.py`) links specific human
 | ID | Meme Reference | Pose | Handedness | Kinematic Mechanics |
 | :---: | :---: | :--- | :---: | :--- |
 | **1** | ![Cat Shaka](memes/1.jpg) | 🤙 **Cat Shaka** | **Left or Right** | `Thumb & Pinky` extended outward ($\text{angle} > 130^\circ$, $\text{dist} > 0.7 \cdot \text{palm}$), Index, Middle, Ring curled inward ($\text{dist} < \text{PIP}$). |
-| **2** | ![Monkey Pointing](memes/2.jpg) | ☝️ **Monkey Pointing** | **Left or Right** | `Index` extended vertically ($\text{angle} > 135^\circ$), Thumb + Middle + Ring + Pinky folded down. ML class: `Pointer`. |
-| **3** | ![Monkey Thinking](memes/3.jpg) | 🤔 **Monkey Thinking** | **Left or Right** | `Index` PIP projected forward ($\text{dist} > 0.3 \cdot \text{palm}$), but tip curled down/back ($\text{angle} < 125^\circ$), other fingers folded. |
-| **4** | ![Monkey Thumbs Up](memes/4.jpg) | 👍 **Monkey Thumbs Up** | **Left or Right** | `Thumb` pointing straight UP ($y_{\text{tip}} < y_{\text{MCP}} - 0.2 \cdot \text{palm}$), all 4 fingers clenched into a fist. |
-| **5** | ![Baby Fist](memes/5.jpg) | ✊ **Laughing Baby Fist** | **Left Hand** *(or held)* | Closed fist with `Left Hand` (matches baby's left fist) or ML class `Close`. |
-| **6** | ![LeBron Knuckle](memes/6.jpg) | 🔄 **LeBron Knuckle / Motion** | **Right Hand / Motion** | Closed fist with `Right Hand` (matches LeBron biting knuckles) OR circular index finger motion (`Clockwise` / `Counter Clockwise`). |
-| **7** | ![J. Cole Open](memes/7.jpg) | 🖐️ **J. Cole Open Hand** | **Left or Right** | All 5 fingers extended flat facing camera ($\text{angle} > 130^\circ$ on all 4 fingers) or ML class `Open`. |
-| **8** | ![Who Me](memes/8.jpg) | 👉👤 **Who, Me?** | **Left or Right** | `Index` pointing horizontally inward at chest ($|x_{\text{tip}} - x_{\text{MCP}}| > |y_{\text{tip}} - y_{\text{MCP}}|$), thumb out, other fingers folded. |
+| **2** | ![Monkey Pointing](memes/2.jpg) | ☝️ **1 Finger: Monkey Pointing** | **Left or Right** | `Index` extended vertically ($\text{angle} > 135^\circ$), other 4 fingers folded down. ML class: `Pointer`. |
+| **4** | ![Monkey Thumbs Up](memes/4.jpg) | 👍 **Monkey Thumbs Up** | **Left or Right** | `Thumb` pointing vertically UP ($y_{\text{tip}} < y_{\text{MCP}} - 0.2 \cdot \text{palm}$, $|dy| > |dx|$), all 4 fingers clenched into a fist. |
+| **5** | ![Cat 4-Finger Hold](memes/5.png) | 🐾 **4 Fingers: Cat 4-Finger Hold** | **Left or Right** | 4 fingers extended (`Index`, `Middle`, `Ring`, `Pinky` $\text{angle} > 135^\circ$), with `Thumb` folded across palm ($\neg \text{Thumb Extended}$). |
+| **7** | ![J. Cole Open](memes/7.jpg) | 🖐️ **5 Fingers: J. Cole Open Hand** | **Left or Right** | All 5 fingers extended flat facing camera ($\text{angle} > 130^\circ$ on all 4 fingers $\land \text{Thumb Extended}$) or ML class `Open`. |
+| **8** | ![Cool Cat Peace](memes/8.png) | ✌️ **2 Fingers: Cool Cat Peace** | **Left or Right** | `Index` & `Middle` extended in a Peace/V sign ($\text{angle} > 135^\circ$), `Ring` & `Pinky` folded down. |
 
 ### Technical Innovations
 
@@ -285,8 +283,10 @@ An interactive gesture controller module (`meme_action.py`) links specific human
    $$\text{Folded}(F) \iff \text{dist}(\text{TIP}_F, 0) \le 1.10 \cdot \text{dist}(\text{PIP}_F, 0) \lor \angle(\text{MCP}_F, \text{PIP}_F, \text{TIP}_F) < 115^\circ$$
    This ensures identical detection precision on both Left and Right hands.
 
-2. **ML Synergy for Closed Fist**:
-   Closed fist detection uses predictions from the pre-trained `KeyPointClassifier` (`hand_sign_label == 'Close'`) combined with anatomical folding checks. This completely resolves previous thumb occlusion and tilted fist failures.
+2. **Intuitive Multi-Finger Count Discrimination**:
+   Finger counting accurately separates 1, 2, 4, and 5 extended fingers. Differentiating between 4 fingers (Cat Hold) and 5 fingers (Open Hand) is performed dynamically by checking thumb extension kinematics relative to the palm center:
+   $$\text{Thumb Extended} \iff \text{dist}(\text{TIP}_4, \text{MCP}_2) > 0.55 \cdot \text{palm} \land \text{dist}(\text{TIP}_4, \text{MCP}_9) > 0.65 \cdot \text{palm}$$
+   When all 4 main digits are extended, a folded thumb immediately triggers Meme #5, while an extended thumb triggers Meme #7.
 
 3. **Hold-to-Confirm Temporal Smoothing**:
    A rolling hold counter requires $N = 8$ consecutive matching frames ($\approx 0.25 - 0.30\text{s}$) to activate a meme. A real-time HUD progress bar displays `Holding: <Gesture> (XX%)` while holding, eliminating 100% of transient transition noise.

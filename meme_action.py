@@ -19,27 +19,25 @@ class MemeTrigger:
         self.memes_dir = memes_dir
         self.hold_frames = hold_frames  # Consecutive frames to confirm a gesture (~0.25 - 0.3s)
 
-        # Exact user file mapping
-        self.meme_files = {
-            1: os.path.join(memes_dir, "1.jpg"),
-            2: os.path.join(memes_dir, "2.jpg"),
-            3: os.path.join(memes_dir, "3.jpg"),
-            4: os.path.join(memes_dir, "4.jpg"),
-            5: os.path.join(memes_dir, "5.jpg"),
-            6: os.path.join(memes_dir, "6.jpg"),
-            7: os.path.join(memes_dir, "7.jpg"),
-            8: os.path.join(memes_dir, "8.jpg"),
-        }
+        # Exact user file mapping (supports both .png and .jpg)
+        self.meme_files = {}
+        for mid in [1, 2, 4, 5, 7, 8]:
+            png_p = os.path.join(memes_dir, f"{mid}.png")
+            jpg_p = os.path.join(memes_dir, f"{mid}.jpg")
+            if os.path.exists(png_p):
+                self.meme_files[mid] = png_p
+            elif os.path.exists(jpg_p):
+                self.meme_files[mid] = jpg_p
+            else:
+                self.meme_files[mid] = png_p
 
         self.meme_labels = {
             1: "Cat Shaka (Thumb+Pinky)",
-            2: "Monkey Pointing Up",
-            3: "Monkey Thinking (Hooked Index)",
+            2: "Monkey Point (1 Finger)",
             4: "Monkey Thumbs Up",
-            5: "Baby Fist (Closed Left)",
-            6: "LeBron Knuckle (Closed Right / 🔄)",
-            7: "J. Cole Open Hand",
-            8: "Who, Me? (Point at Self)",
+            5: "Cat 4-Finger Hold (4 Fingers)",
+            7: "J. Cole Open Hand (5 Fingers)",
+            8: "Cool Cat Peace (2 Fingers)",
         }
 
         # Cache pre-fitted card images (letterboxed to avoid distortion)
@@ -57,10 +55,6 @@ class MemeTrigger:
         self.current_candidate = None
         self.candidate_name = ""
         self.hold_count = 0
-
-        # Fist toggle tracking for single-hand users
-        self.fist_hold_timer = 0
-        self.fist_toggle = 0
 
     def _load_and_cache_images(self):
         """Loads and prepares high quality letterboxed images for the in-video card."""
@@ -84,13 +78,9 @@ class MemeTrigger:
 
     def detect_custom_gesture(self, landmark_list, motion_gesture, hand_sign_label="Unknown", handedness="Right"):
         """
-        Classifies 21 MediaPipe hand landmarks into meme gestures 1-8.
+        Classifies 21 MediaPipe hand landmarks into meme gestures (1, 2, 4, 5, 7, 8).
         Fully compatible with both Left and Right hands.
         """
-        # Motion Gesture override: Clockwise or Counter Clockwise triggers Meme #6 (LeBron 🔄)
-        if motion_gesture in ["Clockwise", "Counter Clockwise"]:
-            return 6, f"Motion: {motion_gesture}"
-
         if not landmark_list or len(landmark_list) < 21:
             return None, "None"
 
@@ -120,10 +110,7 @@ class MemeTrigger:
         # 1. Index (5: MCP, 6: PIP, 7: DIP, 8: TIP)
         index_angle = get_angle(5, 6, 8)
         index_extended = (dist(8, 0) > dist(6, 0) * 1.15) and (dist(8, 5) > dist(6, 5) * 1.05) and (index_angle > 135)
-        # Bent/Hooked (Thinking pose): PIP projected forward from MCP, tip curled in towards palm/MCP
-        index_pip_proj = (dist(6, 5) > 0.3 * palm_size) and (dist(6, 0) > dist(5, 0) * 1.08)
-        index_bent = index_pip_proj and (index_angle < 125) and (dist(8, 5) <= dist(6, 5) * 1.25) and (not index_extended)
-        index_folded = (not index_extended) and (not index_bent)
+        index_folded = not index_extended
 
         # 2. Middle (9: MCP, 10: PIP, 11: DIP, 12: TIP)
         middle_angle = get_angle(9, 10, 12)
@@ -142,53 +129,36 @@ class MemeTrigger:
 
         # 5. Thumb (0: Wrist, 2: MCP, 3: IP, 4: TIP)
         thumb_extended = (dist(4, 2) > 0.55 * palm_size) and (dist(4, 9) > 0.65 * palm_size)
-        thumb_pointing_up = (pts[4][1] < pts[2][1] - 0.2 * palm_size) and thumb_extended
+        thumb_pointing_up = (pts[4][1] < pts[2][1] - 0.2 * palm_size) and thumb_extended and (abs(pts[4][1] - pts[2][1]) > abs(pts[4][0] - pts[2][0]))
 
         # --- Gesture Decision Rules ---
 
-        # 7 -> Open Hand (J. Cole Stop / Open Hand):
-        # 4 main fingers extended, or ML says Open
-        if (index_extended and middle_extended and ring_extended and pinky_extended) or (hand_sign_label == "Open" and not thumb_pointing_up):
-            return 7, "Open Hand"
+        # 7 & 5 -> 5 Fingers (Open Hand) & 4 Fingers (Cat 4-Finger Hold):
+        all_four_extended = index_extended and middle_extended and ring_extended and pinky_extended
+        if all_four_extended:
+            if thumb_extended:
+                return 7, "Open Hand (5 Fingers)"
+            else:
+                return 5, "4 Fingers"
+
+        if hand_sign_label == "Open" and thumb_extended and not thumb_pointing_up:
+            return 7, "Open Hand (5 Fingers)"
 
         # 1 -> Thumb + Pinky (Cat Shaka 🤙):
-        # Thumb & Pinky extended, middle 3 fingers folded
-        if thumb_extended and pinky_extended and middle_folded and ring_folded and (not index_extended) and (not index_bent):
+        if thumb_extended and pinky_extended and middle_folded and ring_folded and index_folded:
             return 1, "Thumb + Pinky"
 
-        # 8 -> Who, Me? (Index pointing inward / towards self):
-        index_pointing_inward = (dist(8, 5) > 0.6 * palm_size) and (abs(pts[8][0] - pts[5][0]) > abs(pts[8][1] - pts[5][1]))
-        if index_pointing_inward and middle_folded and ring_folded and pinky_folded:
-            return 8, "Point at Self"
-
-        # 4 -> Thumb Up (Monkey Thumbs Up):
-        # Thumb pointing UP, all other 4 fingers folded into a fist
-        if thumb_pointing_up and (not pinky_extended) and index_folded and middle_folded and ring_folded and pinky_folded and (not index_pointing_inward):
+        # 4 -> Thumb Up (Monkey Thumbs Up 👍):
+        if thumb_pointing_up and (not pinky_extended) and index_folded and middle_folded and ring_folded:
             return 4, "Thumb Up"
 
-        # 2 -> Index Pointer (Monkey Pointing Up ☝️):
-        # Index extended straight up, other fingers folded
-        if (index_extended or hand_sign_label == "Pointer") and (not index_bent) and middle_folded and ring_folded and pinky_folded and (not pinky_extended):
-            return 2, "Index Point"
+        # 8 -> 2 Fingers (Cool Cat Peace ✌️):
+        if index_extended and middle_extended and ring_folded and pinky_folded and (not thumb_pointing_up):
+            return 8, "2 Fingers"
 
-        # 3 -> Index Bend (Monkey Thinking 🤔):
-        # Index hooked/bent, other 3 fingers folded
-        if index_bent and middle_folded and ring_folded and pinky_folded:
-            return 3, "Index Bend"
-
-        # 5 & 6 -> Closed Fist (Baby Fist ✊ / LeBron Knuckle Bite ✊):
-        # Triggers via ML model "Close" OR geometric folding of all 4 fingers without thumb pointing up
-        all_four_folded = index_folded and middle_folded and ring_folded and pinky_folded and (not index_bent) and (not pinky_extended)
-        if hand_sign_label == "Close" or (all_four_folded and not thumb_pointing_up):
-            # Left Hand Fist -> Meme #5 (Baby Fist)
-            # Right Hand Fist -> Meme #6 (LeBron Knuckle Bite)
-            # If user holds fist continuously, toggle to allow single-hand access to both
-            if handedness == "Left":
-                return 5, "Baby Fist (Left)"
-            elif handedness == "Right":
-                return 6, "LeBron Knuckle (Right)"
-            else:
-                return 5, "Closed Fist"
+        # 2 -> 1 Finger (Monkey Pointing Up ☝️):
+        if (index_extended or hand_sign_label == "Pointer") and middle_folded and ring_folded and pinky_folded and (not thumb_pointing_up):
+            return 2, "1 Finger (Index Point)"
 
         return None, "Unknown"
 
@@ -212,15 +182,6 @@ class MemeTrigger:
                 self.hold_count = self.hold_frames  # cap
 
                 target_id = self.current_candidate
-                # Toggle for fist if held continuously for a long time (~40 frames / ~1.5s)
-                if target_id in (5, 6):
-                    self.fist_hold_timer += 1
-                    if self.fist_hold_timer > 40:
-                        self.fist_toggle = 1 - self.fist_toggle
-                        self.fist_hold_timer = 0
-                        target_id = 6 if self.fist_toggle == 1 else 5
-                else:
-                    self.fist_hold_timer = 0
 
                 if self.active_meme_id != target_id:
                     self.active_meme_id = target_id
@@ -229,7 +190,6 @@ class MemeTrigger:
                     print(f"[MEME CONFIRMED] Switched to Meme #{self.active_meme_id}: {self.active_meme_label}")
         else:
             self.hold_count = max(0, self.hold_count - 1)
-            self.fist_hold_timer = 0
             if self.hold_count == 0:
                 self.current_candidate = None
                 self.candidate_name = ""
@@ -239,7 +199,6 @@ class MemeTrigger:
     def update_no_hand(self):
         """Called when no hand is in the frame to smoothly reset candidate hold state."""
         self.hold_count = max(0, self.hold_count - 2)
-        self.fist_hold_timer = 0
         if self.hold_count == 0:
             self.current_candidate = None
             self.candidate_name = ""
@@ -309,18 +268,16 @@ class MemeTrigger:
             cv2.putText(image, "Hold gesture to trigger:", (x1 + 14, guide_y),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.38, (180, 180, 180), 1, cv2.LINE_AA)
             guide_lines = [
-                "1: Cat Shaka (Thumb+Pinky)",
-                "2: Monkey Point (Index Up)",
-                "3: Monkey Think (Hook Index)",
-                "4: Monkey Thumbs Up",
-                "5: Baby Fist (Left ✊)",
-                "6: LeBron Knuckle (Right / 🔄)",
-                "7: J. Cole Open Hand (🖐️)",
-                "8: Who, Me? (Point at Self)",
+                "1: Cat Shaka (Thumb+Pinky 🤙)",
+                "2: Monkey Point (1 Finger ☝️)",
+                "4: Monkey Thumbs Up (👍)",
+                "5: Cat 4-Finger Hold (4 Fingers)",
+                "7: J. Cole Open (5 Fingers 🖐️)",
+                "8: Cool Cat Peace (2 Fingers ✌️)",
             ]
             for idx, gl in enumerate(guide_lines):
-                cv2.putText(image, gl, (x1 + 16, guide_y + 20 + idx * 18),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.34, (220, 220, 220), 1, cv2.LINE_AA)
+                cv2.putText(image, gl, (x1 + 16, guide_y + 22 + idx * 22),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.35, (220, 220, 220), 1, cv2.LINE_AA)
 
         # 5. Hold-to-Confirm Progress Bar
         bar_y = y2 - 24
