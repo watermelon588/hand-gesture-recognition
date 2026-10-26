@@ -15,9 +15,10 @@ import numpy as np
 
 
 class MemeTrigger:
-    def __init__(self, memes_dir='memes', hold_frames=8, **kwargs):
+    def __init__(self, memes_dir='memes', hold_frames=8, start_active=False, **kwargs):
         self.memes_dir = memes_dir
         self.hold_frames = hold_frames  # Consecutive frames to confirm a gesture (~0.25 - 0.3s)
+        self.detection_enabled = start_active  # Standby by default; started via Counter Clockwise dynamic gesture
 
         # Exact user file mapping (supports both .png and .jpg)
         self.meme_files = {}
@@ -41,8 +42,8 @@ class MemeTrigger:
         }
 
         # Cache pre-fitted card images (letterboxed to avoid distortion)
-        self.card_size = (260, 290)
-        self.img_box_size = (244, 205)
+        self.card_size = (270, 315)
+        self.img_box_size = (254, 230)
         self.cached_images = {}
         self._load_and_cache_images()
 
@@ -50,6 +51,7 @@ class MemeTrigger:
         self.active_meme_id = None
         self.active_meme_label = ""
         self.flash_frames = 0
+        self.status_message = "STANDBY" if not self.detection_enabled else "ACTIVE"
 
         # Temporal hold state machine
         self.current_candidate = None
@@ -81,6 +83,10 @@ class MemeTrigger:
         Classifies 21 MediaPipe hand landmarks into meme gestures (1, 2, 4, 5, 7, 8).
         Fully compatible with both Left and Right hands.
         """
+        # Motion Gesture override: When drawing circles in the air, don't trigger static finger gestures
+        if motion_gesture in ["Clockwise", "Counter Clockwise"]:
+            return None, f"Motion: {motion_gesture}"
+
         if not landmark_list or len(landmark_list) < 21:
             return None, "None"
 
@@ -165,8 +171,41 @@ class MemeTrigger:
     def trigger(self, landmark_list, motion_gesture, hand_sign_label="Unknown", handedness="Right"):
         """
         Feeds new frame landmark data and motion gesture.
+        Dynamic motion gestures:
+          - 'Counter Clockwise' (↺): Starts meme detection.
+          - 'Clockwise' (↻): Closes the active meme and stops/pauses detection.
         Uses temporal hold smoothing to confirm gestures stably.
         """
+        # 1. Dynamic Motion Gestures (Highest Priority)
+        if motion_gesture == "Counter Clockwise":
+            if not self.detection_enabled:
+                self.detection_enabled = True
+                self.flash_frames = 12
+                self.status_message = "DETECTION STARTED (CCW)"
+                print("[DYNAMIC GESTURE] Counter Clockwise (CCW) -> Meme Detection STARTED!")
+            self.current_candidate = None
+            self.hold_count = 0
+            return self.active_meme_id
+
+        elif motion_gesture == "Clockwise":
+            if self.detection_enabled or (self.active_meme_id is not None):
+                self.detection_enabled = False
+                self.active_meme_id = None
+                self.active_meme_label = ""
+                self.current_candidate = None
+                self.hold_count = 0
+                self.flash_frames = 12
+                self.status_message = "MEME CLOSED / STOPPED (CW)"
+                print("[DYNAMIC GESTURE] Clockwise (CW) -> Active Meme CLOSED & Detection STOPPED!")
+            return None
+
+        # 2. If detection is paused / standby, do not evaluate static gestures
+        if not self.detection_enabled:
+            self.current_candidate = None
+            self.hold_count = 0
+            return self.active_meme_id
+
+        # 3. Static Hand Gesture Evaluation
         raw_id, raw_name = self.detect_custom_gesture(landmark_list, motion_gesture, hand_sign_label, handedness)
 
         if raw_id is not None:
@@ -196,6 +235,29 @@ class MemeTrigger:
 
         return self.active_meme_id
 
+    def close_active_meme(self):
+        """Closes the currently displayed meme."""
+        self.active_meme_id = None
+        self.active_meme_label = ""
+        self.current_candidate = None
+        self.hold_count = 0
+        self.flash_frames = 10
+        self.status_message = "MEME CLOSED"
+        print("[ACTION] Active meme closed.")
+
+    def toggle_detection(self):
+        """Toggles detection state between active and standby."""
+        self.detection_enabled = not self.detection_enabled
+        if not self.detection_enabled:
+            self.active_meme_id = None
+            self.active_meme_label = ""
+            self.status_message = "DETECTION PAUSED"
+            print("[ACTION] Meme detection PAUSED.")
+        else:
+            self.status_message = "DETECTION STARTED"
+            print("[ACTION] Meme detection STARTED.")
+        self.flash_frames = 10
+
     def update_no_hand(self):
         """Called when no hand is in the frame to smoothly reset candidate hold state."""
         self.hold_count = max(0, self.hold_count - 2)
@@ -205,13 +267,13 @@ class MemeTrigger:
 
     def draw_overlay(self, image):
         """
-        Renders the active meme card and hold progress directly on the OpenCV frame.
+        Renders the active meme card, dynamic gesture status, and hold progress directly on the OpenCV frame.
         """
         im_h, im_w, _ = image.shape
         card_w, card_h = self.card_size
 
         if im_w < 720:
-            scale_factor = 0.8
+            scale_factor = 0.85
             card_w = int(card_w * scale_factor)
             card_h = int(card_h * scale_factor)
 
@@ -223,33 +285,41 @@ class MemeTrigger:
 
         # 1. Dark frosted-glass card background
         overlay = image.copy()
-        cv2.rectangle(overlay, (x1, y1), (x2, y2), (20, 20, 25), -1)
-        cv2.addWeighted(overlay, 0.85, image, 0.15, 0, image)
+        cv2.rectangle(overlay, (x1, y1), (x2, y2), (20, 20, 26), -1)
+        cv2.addWeighted(overlay, 0.88, image, 0.12, 0, image)
 
-        # 2. Glowing card border (flashes gold when newly unlocked)
+        # 2. Glowing card border
         if self.flash_frames > 0:
-            border_color = (0, 230, 255)  # Gold
+            border_color = (0, 230, 255)  # Gold pulse
             border_thick = 3
             self.flash_frames -= 1
-        else:
+        elif self.active_meme_id:
             border_color = (0, 220, 140)  # Neon Emerald Green
+            border_thick = 2
+        elif self.detection_enabled:
+            border_color = (0, 200, 240)  # Bright Cyan
+            border_thick = 2
+        else:
+            border_color = (120, 100, 70)  # Subtle Standby Amber/Slate
             border_thick = 2
         cv2.rectangle(image, (x1, y1), (x2, y2), border_color, border_thick)
 
         # 3. Card Header Bar
         header_h = 32
-        cv2.rectangle(image, (x1, y1), (x2, y1 + header_h), (40, 40, 50), -1)
+        cv2.rectangle(image, (x1, y1), (x2, y1 + header_h), (35, 35, 45), -1)
         cv2.rectangle(image, (x1, y1 + header_h), (x2, y1 + header_h), border_color, 1)
 
         if self.active_meme_id:
             title_text = f"MEME #{self.active_meme_id}: {self.active_meme_label}"
+        elif self.detection_enabled:
+            title_text = "MEME CONTROLLER: ACTIVE"
         else:
-            title_text = "HAND MEME CONTROLLER"
+            title_text = "MEME CONTROLLER: STANDBY"
 
         cv2.putText(image, title_text, (x1 + 8, y1 + 22),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.44, (255, 255, 255), 1, cv2.LINE_AA)
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.42, (255, 255, 255), 1, cv2.LINE_AA)
 
-        # 4. Active Meme Image Display
+        # 4. Active Meme Image Display vs Guide Layout
         if self.active_meme_id and self.active_meme_id in self.cached_images:
             cached_img = self.cached_images[self.active_meme_id]
             display_w = card_w - 16
@@ -263,49 +333,72 @@ class MemeTrigger:
             img_y1 = y1 + header_h + 6
             image[img_y1:img_y1 + display_h, img_x1:img_x1 + display_w] = img_to_draw
         else:
-            # Idle placeholder guide
-            guide_y = y1 + 55
-            cv2.putText(image, "Hold gesture to trigger:", (x1 + 14, guide_y),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.38, (180, 180, 180), 1, cv2.LINE_AA)
-            guide_lines = [
-                "1: Cat Shaka (Thumb+Pinky 🤙)",
-                "2: Monkey Point (1 Finger ☝️)",
-                "4: Monkey Thumbs Up (👍)",
-                "5: Cat 4-Finger Hold (4 Fingers)",
-                "7: J. Cole Open (5 Fingers 🖐️)",
-                "8: Cool Cat Peace (2 Fingers ✌️)",
-            ]
-            for idx, gl in enumerate(guide_lines):
-                cv2.putText(image, gl, (x1 + 16, guide_y + 22 + idx * 22),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.35, (220, 220, 220), 1, cv2.LINE_AA)
+            guide_y = y1 + 52
+            if not self.detection_enabled:
+                # Standby Banner
+                cv2.rectangle(image, (x1 + 10, guide_y - 8), (x2 - 10, guide_y + 18), (55, 40, 20), -1)
+                cv2.rectangle(image, (x1 + 10, guide_y - 8), (x2 - 10, guide_y + 18), (0, 190, 255), 1)
+                cv2.putText(image, "DETECTION PAUSED", (x1 + 45, guide_y + 11),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.40, (0, 220, 255), 1, cv2.LINE_AA)
 
-        # 5. Hold-to-Confirm Progress Bar
+                guide_lines = [
+                    ("DYNAMIC MOTIONS:", (255, 255, 255)),
+                    ("Draw CCW in air: START", (0, 255, 200)),
+                    ("Draw CW in air: STOP/CLOSE", (120, 200, 255)),
+                    ("", (0, 0, 0)),
+                    ("Draw CCW circle with pointer", (220, 220, 220)),
+                    ("finger in air to start!", (220, 220, 220)),
+                    ("", (0, 0, 0)),
+                    ("Key 'S': toggle | 'C': close", (160, 160, 180)),
+                ]
+                for idx, (gl, color) in enumerate(guide_lines):
+                    if gl:
+                        cv2.putText(image, gl, (x1 + 14, guide_y + 40 + idx * 20),
+                                    cv2.FONT_HERSHEY_SIMPLEX, 0.35, color, 1, cv2.LINE_AA)
+            else:
+                # Active Guide
+                cv2.putText(image, "Dynamic: CCW Start | CW Stop/Close", (x1 + 12, guide_y - 2),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.35, (0, 230, 255), 1, cv2.LINE_AA)
+                guide_lines = [
+                    "1: Cat Shaka (Thumb+Pinky)",
+                    "2: Monkey Point (1 Finger)",
+                    "4: Monkey Thumbs Up",
+                    "5: Cat 4-Finger Hold (4 Fingers)",
+                    "7: J. Cole Open (5 Fingers)",
+                    "8: Cool Cat Peace (2 Fingers)",
+                ]
+                for idx, gl in enumerate(guide_lines):
+                    cv2.putText(image, gl, (x1 + 14, guide_y + 24 + idx * 22),
+                                cv2.FONT_HERSHEY_SIMPLEX, 0.35, (220, 220, 220), 1, cv2.LINE_AA)
+
+        # 5. Bottom Status / Progress Bar
         bar_y = y2 - 24
         bar_x1 = x1 + 10
         bar_x2 = x2 - 10
         bar_w = bar_x2 - bar_x1
         bar_h = 13
 
-        if self.current_candidate is not None and self.current_candidate != self.active_meme_id and self.hold_count > 1:
+        if self.current_candidate is not None and self.current_candidate != self.active_meme_id and self.hold_count > 1 and self.detection_enabled:
             progress = min(1.0, self.hold_count / self.hold_frames)
             fill_w = int(bar_w * progress)
 
-            # Bar background
             cv2.rectangle(image, (bar_x1, bar_y), (bar_x2, bar_y + bar_h), (50, 50, 60), -1)
-            # Bar fill
             cv2.rectangle(image, (bar_x1, bar_y), (bar_x1 + fill_w, bar_y + bar_h), (0, 200, 255), -1)
-            # Bar border
             cv2.rectangle(image, (bar_x1, bar_y), (bar_x2, bar_y + bar_h), (120, 120, 140), 1)
 
-            # Hold label
             cand_name = self.meme_labels.get(self.current_candidate, self.candidate_name)
             hold_msg = f"Holding: {cand_name} ({int(progress * 100)}%)"
             cv2.putText(image, hold_msg, (bar_x1, bar_y - 4),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.34, (0, 240, 255), 1, cv2.LINE_AA)
         else:
-            # Active status badge
             if self.active_meme_id:
-                cv2.putText(image, "[ACTIVE ON SCREEN]", (bar_x1 + 4, bar_y + 10),
+                cv2.putText(image, "[ACTIVE] Draw CW to Close Meme", (bar_x1 + 4, bar_y + 10),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.36, (0, 255, 120), 1, cv2.LINE_AA)
+            elif not self.detection_enabled:
+                cv2.putText(image, "[STANDBY] Draw CCW to Start", (bar_x1 + 4, bar_y + 10),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.35, (0, 200, 255), 1, cv2.LINE_AA)
+            else:
+                cv2.putText(image, "[READY] Hold gesture to trigger", (bar_x1 + 4, bar_y + 10),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.34, (160, 220, 160), 1, cv2.LINE_AA)
 
         return image

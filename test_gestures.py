@@ -83,11 +83,12 @@ tests = [
     ("8: 2 Fingers Peace (Right Hand)", make_hand(thumb_ext=False, index_state='extended', middle_ext=True, ring_ext=False, pinky_ext=False, is_left=False), "Stop", "Unknown", "Right", 8),
     ("8: 2 Fingers Peace (Left Hand)", make_hand(thumb_ext=False, index_state='extended', middle_ext=True, ring_ext=False, pinky_ext=False, is_left=True), "Stop", "Unknown", "Left", 8),
 
-    # Removed Gestures: Should NOT trigger any meme
+    # Removed Gestures & Dynamic Motion Overrides:
     ("Removed: Hooked Index (Old 3)", make_hand(index_state='bent', is_left=False), "Stop", "Unknown", "Right", None),
     ("Removed: Closed Fist Left (Old 5)", make_hand(is_left=True), "Stop", "Close", "Left", None),
     ("Removed: Closed Fist Right (Old 6)", make_hand(is_left=False), "Stop", "Close", "Right", None),
-    ("Removed: Circle Motion (Old 6)", make_hand(index_state='extended', is_left=False), "Clockwise", "Pointer", "Right", 2), # Now just triggers 1-finger point!
+    ("Dynamic: Clockwise Circle Motion", make_hand(index_state='extended', is_left=False), "Clockwise", "Pointer", "Right", None),
+    ("Dynamic: CCW Circle Motion", make_hand(index_state='extended', is_left=False), "Counter Clockwise", "Pointer", "Right", None),
     ("Removed: Point at Chest (Old 8)", make_hand(thumb_ext=True, index_state='inward', is_left=False), "Stop", "Unknown", "Right", None),
 ]
 
@@ -105,32 +106,62 @@ for test_name, pts, motion, sign_label, hand, expected_id in tests:
 
 print("=" * 75)
 
-# --- Hold-to-Confirm Temporal Smoothing Test ---
-print("\nVERIFYING HOLD-TO-CONFIRM ON REAL FRAMES:")
-test_mt = MemeTrigger(hold_frames=8)
+# --- Dynamic Gesture Lifecycle & Hold-to-Confirm Temporal Smoothing Test ---
+print("\nVERIFYING DYNAMIC MOTION GESTURES & LIFECYCLE (START / CLOSE / STOP):")
+test_mt = MemeTrigger(hold_frames=8, start_active=False)
 right_point = make_hand(index_state='extended', is_left=False)
 
-# 3 frames (transient)
+# 1. Standby check: static gestures must NOT trigger memes while standby
+for _ in range(10):
+    test_mt.trigger(right_point, 'Stop', 'Pointer', 'Right')
+assert test_mt.active_meme_id is None, "Should NOT trigger meme while in Standby!"
+assert not test_mt.detection_enabled, "Detection should be disabled initially!"
+print("Standby rejection of static gestures: [PASS]")
+
+# 2. Dynamic Start: 'Counter Clockwise' gesture starts detection
+test_mt.trigger(right_point, 'Counter Clockwise', 'Pointer', 'Right')
+assert test_mt.detection_enabled, "Counter Clockwise should enable detection!"
+assert test_mt.active_meme_id is None, "Start gesture itself should not activate a meme!"
+print("Counter Clockwise dynamic gesture starts detection: [PASS]")
+
+# 3. 3 frames (transient) while active
 for _ in range(3):
     test_mt.trigger(right_point, 'Stop', 'Pointer', 'Right')
 assert test_mt.active_meme_id is None, "Should not trigger on 3 transient frames!"
 print("Transient 3 frames rejected properly: [PASS]")
 
-# 8 frames (confirmed)
+# 4. 8 frames (confirmed) -> locks into Meme 2
 for _ in range(5):
     test_mt.trigger(right_point, 'Stop', 'Pointer', 'Right')
 assert test_mt.active_meme_id == 2, "Should lock into Meme 2 after 8 frames!"
 print("Hold-to-confirm locked into Meme 2: [PASS]")
 
-# Test Overlay Rendering
+# 5. Dynamic Stop / Close: 'Clockwise' gesture closes active meme and stops detection
+test_mt.trigger(right_point, 'Clockwise', 'Pointer', 'Right')
+assert test_mt.active_meme_id is None, "Clockwise should close active meme!"
+assert not test_mt.detection_enabled, "Clockwise should stop detection!"
+print("Clockwise dynamic gesture closes active meme & stops detection: [PASS]")
+
+# 6. Re-verify standby: static gestures do not trigger after stop
+for _ in range(10):
+    test_mt.trigger(right_point, 'Stop', 'Pointer', 'Right')
+assert test_mt.active_meme_id is None, "Should not trigger meme after stopped!"
+print("Static gestures rejected after stop: [PASS]")
+
+# 7. Test Overlay Rendering in both Standby and Active states
 dummy = np.zeros((540, 960, 3), dtype=np.uint8)
-rendered = test_mt.draw_overlay(dummy)
-assert rendered.shape == (540, 960, 3), "Overlay dimension mismatch!"
-print("In-video card overlay render: [PASS]")
+rendered_standby = test_mt.draw_overlay(dummy.copy())
+assert rendered_standby.shape == (540, 960, 3), "Overlay dimension mismatch in standby!"
+
+test_mt.detection_enabled = True
+test_mt.active_meme_id = 8  # Cool cat peace
+rendered_active = test_mt.draw_overlay(dummy.copy())
+assert rendered_active.shape == (540, 960, 3), "Overlay dimension mismatch in active!"
+print("In-video card overlay render (Standby & Active): [PASS]")
 
 print("=" * 75)
 if all_pass:
-    print(f"ALL {len(tests)} TEST CASES (LEFT & RIGHT HANDS + MOTION) PASSED WITH 100% SUCCESS!")
+    print(f"ALL {len(tests)} STATIC TESTS + ALL DYNAMIC LIFECYCLE TESTS PASSED WITH 100% SUCCESS!")
 else:
     print("SOME TEST CASES FAILED!")
 print("=" * 75)

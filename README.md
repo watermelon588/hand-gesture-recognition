@@ -108,11 +108,21 @@ Control and showcase memes live on camera using hand signs! Mimic the pose from 
 | **7** | ![J. Cole Open](memes/7.jpg) | 🖐️ **5 Fingers: J. Cole Open Hand** | **Left or Right** | Open all **5 fingers flat out** facing the camera (5 finger count / "Stop / Chill" pose). |
 | **8** | ![Cool Cat Peace](memes/8.png) | ✌️ **2 Fingers: Cool Cat Peace** | **Left or Right** | Extend **Index & Middle fingers in a Peace/V sign** (2 finger count), fold ring and pinky. |
 
+### 🔄 Dynamic Hand Gestures (Start & Close / Stop)
+
+| Dynamic Motion | Action | Description |
+| :---: | :---: | :--- |
+| **↺ Counter-Clockwise (CCW)** | **START Detection** | Draw a circle counter-clockwise in the air with your pointer finger to start meme detection. |
+| **↻ Clockwise (CW)** | **STOP & CLOSE Meme** | Draw a circle clockwise in the air with your pointer finger to dismiss the active meme and pause detection. |
+
+* **Keyboard Controls**: Press `S` to toggle detection on/off, `C` to close the active meme.
+
 ### Stability & Experience Features
 * **Zero External Windows**: Memes render directly in the top-right corner of the video window inside a letterboxed frosted-glass card.
 * **Hold-to-Confirm Smoothing**: Hold any gesture for ~0.3s (8 frames) to activate. Transient hand movements or passing poses never trigger random memes.
 * **Live Progress Bar**: Displays `Holding: <Gesture> (XX%)` on the card before locking in.
 * **Full Left & Right Hand Support**: Powered by hand-agnostic joint kinematic geometry and finger count angle tracking.
+* **Dynamic Air Gesture Showcase**: Real-time trajectory modeling (`PointHistoryClassifier`) controls app lifecycle without touching the keyboard.
 
 ---
 

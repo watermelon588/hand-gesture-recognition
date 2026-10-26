@@ -17,6 +17,19 @@ The project includes an interactive gesture controller that maps your exact real
 
 ---
 
+## 🔄 Dynamic Hand Gestures: Start Detection & Close Active Meme
+
+The system integrates real-time trajectory tracking of the index fingertip (`PointHistoryClassifier`) to enable dynamic air gestures for full lifecycle control:
+
+| Dynamic Motion | Action | Description |
+| :---: | :---: | :--- |
+| **↺ Counter-Clockwise (CCW)** | **START Meme Detection** | Draw a counter-clockwise circle in the air with your pointer finger to start/enable meme detection. |
+| **↻ Clockwise (CW)** | **STOP Detection & CLOSE Meme** | Draw a clockwise circle in the air with your pointer finger to immediately close/dismiss the active meme and pause detection. |
+
+* **Keyboard Fallbacks**: Press `S` to toggle detection on/off, `C` to dismiss the active meme.
+
+---
+
 ## 🧠 System Architecture & Reliability Highlights
 
 1. **100% In-Video Rendering**:

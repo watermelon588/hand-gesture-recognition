@@ -34,6 +34,7 @@ def get_args():
                         type=int,
                         default=0.5)
     parser.add_argument("--disable_memes", action="store_true", help="Disable automatic meme opening on gestures")
+    parser.add_argument("--start_active", action="store_true", help="Start with meme detection already active (default: standby, requires Counter Clockwise gesture to start)")
 
     args = parser.parse_args()
 
@@ -73,7 +74,11 @@ def main():
     point_history_classifier = PointHistoryClassifier()
 
     # Meme Trigger #############################################################
-    meme_trigger = None if args.disable_memes else MemeTrigger(memes_dir='memes', hold_frames=10)
+    meme_trigger = None if args.disable_memes else MemeTrigger(
+        memes_dir='memes',
+        hold_frames=10,
+        start_active=args.start_active,
+    )
 
     # ラベル読み込み ###########################################################
     with open('model/keypoint_classifier/keypoint_classifier_label.csv',
@@ -110,6 +115,10 @@ def main():
         key = cv.waitKey(10)
         if key == 27:  # ESC
             break
+        if key in (ord('c'), ord('C')) and meme_trigger:
+            meme_trigger.close_active_meme()
+        elif key in (ord('s'), ord('S')) and meme_trigger:
+            meme_trigger.toggle_detection()
         number, mode = select_mode(key, mode)
 
         # カメラキャプチャ #####################################################

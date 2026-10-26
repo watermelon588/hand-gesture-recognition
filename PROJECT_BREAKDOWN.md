@@ -275,6 +275,15 @@ An interactive gesture controller module (`meme_action.py`) links specific human
 | **7** | ![J. Cole Open](memes/7.jpg) | 🖐️ **5 Fingers: J. Cole Open Hand** | **Left or Right** | All 5 fingers extended flat facing camera ($\text{angle} > 130^\circ$ on all 4 fingers $\land \text{Thumb Extended}$) or ML class `Open`. |
 | **8** | ![Cool Cat Peace](memes/8.png) | ✌️ **2 Fingers: Cool Cat Peace** | **Left or Right** | `Index` & `Middle` extended in a Peace/V sign ($\text{angle} > 135^\circ$), `Ring` & `Pinky` folded down. |
 
+### Dynamic Motion Gestures (Lifecycle & State Machine)
+
+The project leverages MediaPipe index fingertip history tracking ($L = 16$ frames) through the trained `PointHistoryClassifier` to provide dynamic hand gesture lifecycle commands:
+
+| Dynamic Motion | Action | System State Transition |
+| :---: | :---: | :--- |
+| **↺ Counter-Clockwise (CCW)** | **START Detection** | Sets `detection_enabled = True`, unlocking static hand gesture recognition. HUD pulses cyan. |
+| **↻ Clockwise (CW)** | **STOP & CLOSE Meme** | Sets `active_meme_id = None` (dismisses active meme) and sets `detection_enabled = False` (pauses detection). HUD pulses gold/amber. |
+
 ### Technical Innovations
 
 1. **Hand-Agnostic Kinematics**:
@@ -290,3 +299,6 @@ An interactive gesture controller module (`meme_action.py`) links specific human
 
 3. **Hold-to-Confirm Temporal Smoothing**:
    A rolling hold counter requires $N = 8$ consecutive matching frames ($\approx 0.25 - 0.30\text{s}$) to activate a meme. A real-time HUD progress bar displays `Holding: <Gesture> (XX%)` while holding, eliminating 100% of transient transition noise.
+
+4. **Dynamic Gesture Precedence**:
+   Circular finger motions (`Counter Clockwise` and `Clockwise`) take strict precedence over static gesture recognition. When drawing circles in the air, static checks for pointer fingers are suppressed, preventing false meme activations while giving users complete hands-free control over opening, showcasing, and closing memes.
