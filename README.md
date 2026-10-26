@@ -32,6 +32,7 @@ It captures video from your webcam, tracks 21 3D hand landmarks in real-time, ex
 * **Datasets & Labels**: CSV keypoint datasets and class label dictionaries.
 * **Model Training Notebooks** (`.ipynb`): Jupyter notebooks for custom training, hyperparameter tuning, confusion matrix evaluation, and TFLite export.
 * **Project Breakdown Document** (`PROJECT_BREAKDOWN.md`): Comprehensive architecture, mathematics, data preprocessing, and engineering guide.
+* **ML Model Deep Dive Document** (`ML_MODEL_DEEP_DIVE.md`): End-to-end breakdown of the ML pipeline, weights/biases, data origin, tech stack, .hdf5 vs .tflite, and theoretical foundations.
 
 ---
 

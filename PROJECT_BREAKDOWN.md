@@ -47,6 +47,7 @@ ML-hand-gesture/
 ├── README.md                             # English project documentation
 ├── README_JA.md                          # Original Japanese documentation
 ├── PROJECT_BREAKDOWN.md                  # Comprehensive technical specification
+├── ML_MODEL_DEEP_DIVE.md                 # Deep-dive: ML models, math, .hdf5 vs .tflite, weights & biases
 │
 ├── model/                                # Machine learning models and inference code
 │   ├── __init__.py                       # Package initializer exposing classifiers
