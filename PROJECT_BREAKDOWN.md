@@ -45,7 +45,6 @@ ML-hand-gesture/
 ├── LICENSE                               # Apache 2.0 open-source license
 ├── CITATION.cff                          # Academic/code citation metadata
 ├── README.md                             # English project documentation
-├── README_JA.md                          # Original Japanese documentation
 ├── PROJECT_BREAKDOWN.md                  # Comprehensive technical specification
 ├── ML_MODEL_DEEP_DIVE.md                 # Deep-dive: ML models, math, .hdf5 vs .tflite, weights & biases
 │

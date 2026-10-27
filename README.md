@@ -1,7 +1,5 @@
 # Hand Gesture Recognition Using MediaPipe & TensorFlow Lite
 
-[[English](README.md) / [Japanese](README_JA.md)]
-
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![Python 3.8 - 3.12](https://img.shields.io/badge/Python-3.8%20--%203.12-brightgreen.svg)](https://www.python.org/)
 [![MediaPipe](https://img.shields.io/badge/MediaPipe-0.8+-orange.svg)](https://mediapipe.dev/)
@@ -157,7 +155,6 @@ python app.py
 ├── Dockerfile                            # Docker container configuration
 ├── LICENSE                               # Apache 2.0 License
 ├── README.md                             # English Documentation
-├── README_JA.md                          # Japanese Documentation
 ├── PROJECT_BREAKDOWN.md                  # Comprehensive technical deep dive & guide
 ├── model/
 │   ├── keypoint_classifier/
